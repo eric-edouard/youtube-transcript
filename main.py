@@ -1,3 +1,4 @@
+import os
 import re
 
 from fastapi import FastAPI, Query
@@ -6,6 +7,7 @@ from youtube_transcript_api import (
     TranscriptsDisabled,
     YouTubeTranscriptApi,
 )
+from youtube_transcript_api.proxies import WebshareProxyConfig
 
 app = FastAPI()
 
@@ -40,6 +42,25 @@ async def get_transcript(url: str = Query(..., description="The YouTube video UR
         }
 
     ytt_api = YouTubeTranscriptApi()
+    # Get Webshare credentials from environment variables
+    proxy_username = os.getenv("WEBSHARE_USERNAME")
+    proxy_password = os.getenv("WEBSHARE_PASSWORD")
+
+    if proxy_username and proxy_password:
+        ytt_api = YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=proxy_username,
+                proxy_password=proxy_password,
+            )
+        )
+    else:
+        # Optionally, handle the case where proxy credentials are not set.
+        # For now, it will proceed without a proxy if they are not found.
+        # Consider logging a warning or raising an error if proxy is mandatory.
+        print(
+            "Warning: WEBSHARE_USERNAME or WEBSHARE_PASSWORD not set. Proceeding without proxy."
+        )
+        ytt_api = YouTubeTranscriptApi()
 
     try:
         transcript_list = ytt_api.list_transcripts(video_id)
