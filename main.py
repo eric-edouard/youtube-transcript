@@ -54,8 +54,14 @@ async def get_transcript(url: str = Query(..., description="The YouTube video UR
         print("Attempting to use Webshare proxy.")
     else:
         print(
-            "Warning: WEBSHARE_USERNAME or WEBSHARE_PASSWORD not set. Proceeding without proxy."
+            "Error: WEBSHARE_USERNAME or WEBSHARE_PASSWORD not set. Proxy is required."
         )
+        return {
+            "success": False,
+            "fail_reason": "proxy_not_configured",
+            "language": None,
+            "transcript": None,
+        }
 
     ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config_instance)
 
