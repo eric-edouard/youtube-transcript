@@ -41,26 +41,23 @@ async def get_transcript(url: str = Query(..., description="The YouTube video UR
             "transcript": None,
         }
 
-    ytt_api = YouTubeTranscriptApi()
     # Get Webshare credentials from environment variables
     proxy_username = os.getenv("WEBSHARE_USERNAME")
     proxy_password = os.getenv("WEBSHARE_PASSWORD")
 
+    proxy_config_instance = None
     if proxy_username and proxy_password:
-        ytt_api = YouTubeTranscriptApi(
-            proxy_config=WebshareProxyConfig(
-                proxy_username=proxy_username,
-                proxy_password=proxy_password,
-            )
+        proxy_config_instance = WebshareProxyConfig(
+            proxy_username=proxy_username,
+            proxy_password=proxy_password,
         )
+        print("Attempting to use Webshare proxy.")
     else:
-        # Optionally, handle the case where proxy credentials are not set.
-        # For now, it will proceed without a proxy if they are not found.
-        # Consider logging a warning or raising an error if proxy is mandatory.
         print(
             "Warning: WEBSHARE_USERNAME or WEBSHARE_PASSWORD not set. Proceeding without proxy."
         )
-        ytt_api = YouTubeTranscriptApi()
+
+    ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config_instance)
 
     try:
         transcript_list = ytt_api.list_transcripts(video_id)
@@ -121,7 +118,7 @@ async def get_transcript(url: str = Query(..., description="The YouTube video UR
                 pass
 
         if found_transcript:
-            transcript_text = " ".join([item["text"] for item in found_transcript])
+            transcript_text = " ".join([item.text for item in found_transcript])
             final_language_code = language_code
             if is_generated and not language_code.endswith("_generated"):
                 final_language_code = f"{language_code}_generated"
